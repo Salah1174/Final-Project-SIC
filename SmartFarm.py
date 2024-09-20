@@ -1,3 +1,5 @@
+import threading
+import bluetooth
 from picamera2 import Picamera2
 from ultralytics import YOLO
 import face_recognition
@@ -5,19 +7,34 @@ import numpy as np
 import cv2
 import RPi.GPIO as GPIO
 import time
+import paho.mqtt.client as mqtt
+import queue
+import serial
 
-# Initialize GPIO
+
+
+# Initialize MQTT
+broker_url = "b8c7ac0cf61549cdbf366299ec2d5807.s1.eu.hivemq.cloud"  
+broker_port = 8883 
+Topic_Logs = "Logs"
+Topic_Infection = "Infection"
+Topic_Solar = "Solar_Panel"
+
+client = mqtt.Client()
+client.username_pw_set("hivemq.webclient.1726841653034", "VDBSnJl<6%&3f72Fov?d")
+client.tls_set()
+client.connect(broker_url, broker_port)
+
+# Initialize GPIO for IR sensor
 GPIO.setmode(GPIO.BCM)
 IR_PIN = 23
 GPIO.setup(IR_PIN, GPIO.IN)
 
-# Initialize PiCamera2
+# Initialize PiCamera2 and YOLO
 picam2 = Picamera2()
-
-# Load the YOLO model for object detection
 yolo_model = YOLO("best.pt")
 
-# Load known face encodings for face detection
+# Load known face encodings
 known_face_encodings = []
 known_face_names = []
 
@@ -34,6 +51,46 @@ known_face_names.append("Salah")
 known_face_encodings.append(known_person2_encoding)
 known_face_names.append("Seif")
 
+# Initialize Bluetooth for solar tracking data
+ser = serial.Serial('/dev/rfcomm0',9600,timeout = 1)
+ser.flush()
+# Queue to store solar tracking data from Bluetooth
+data_queue = queue.Queue()
+
+# Counter for detected infections
+infection_count = 0
+
+def handle_bluetooth():
+    """
+    This thread continuously reads data from the Bluetooth module and places it in a queue.
+    """
+    # print("Waiting for Bluetooth connection...")
+    # client_socket, address = server_socket.accept()
+    # print(f"Accepted connection from {address}")
+    
+
+
+    while True:
+        
+        try:
+            if ser.in_waiting > 0 :
+                line = ser.readline().decode('utf-8').rstrip()
+
+                print(f"Received Bluetooth data: {line}")
+                # Put the received data in the queue
+                data_queue.put(line)
+        except bluetooth.BluetoothError as e:
+            print(f"Bluetooth Error: {e}")
+            break
+
+def publish_mqtt_solar_data():
+    """
+    This function publishes solar data to the MQTT broker from the queue.
+    """
+    while not data_queue.empty():
+        # Get data from the queue
+        data = data_queue.get()
+        client.publish(Topic_Solar, f"Solar Tracking Data: {data}", qos=1)
 
 def run_face_detection():
     print("Running Face Detection...")
@@ -63,6 +120,9 @@ def run_face_detection():
                     name = known_face_names[first_match_index]
                     face_detected = True  # Set flag to True when a face is detected
 
+                    # Log face detection to MQTT
+                    client.publish(Topic_Logs, f"Face detected: {name}", qos=1)
+
                 # Draw a rectangle around the face and label it
                 cv2.rectangle(im, (left, top), (right, bottom), (0, 0, 255), 2)
                 cv2.putText(im, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
@@ -72,7 +132,7 @@ def run_face_detection():
 
             # If a known face is detected, exit face detection
             if face_detected:
-                print("Face detected! Exiting face detection...")
+                print(f"Face detected: {name}. Exiting face detection...")
                 break
 
             # Exit face detection when 'q' is pressed
@@ -85,9 +145,9 @@ def run_face_detection():
         print("Face detection finished.")
         cv2.destroyAllWindows()
 
-
-
 def run_object_detection():
+    
+    global infection_count  # To modify the infection_count variable
     picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480)}))
     picam2.start()
 
@@ -115,11 +175,19 @@ def run_object_detection():
                 class_id = int(cls)
                 object_name = yolo_model.names[class_id]
 
+                # Increment infection count if the object is detected as an "infection"
+                if object_name == "infected":  # Assuming the class name for infection is "infected"
+                    infection_count += 1
+                    client.publish(Topic_Infection, f"Infection detected: {infection_count}", qos=1)
+
                 cv2.rectangle(frame, (x, y), (x2, y2), (0, 0, 255), 2)
                 cv2.putText(frame, f"{object_name} {confi:.2f}", (x, y - 5), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
 
             # Show the processed frame
             cv2.imshow("Object Detection", frame)
+
+            # Publish solar data from Bluetooth
+            publish_mqtt_solar_data()
 
             # Check if the IR sensor detects an object
             if GPIO.input(IR_PIN) == 0:  # Active low
@@ -140,6 +208,12 @@ def run_object_detection():
         GPIO.cleanup()  # Clean up GPIO
         cv2.destroyAllWindows()
 
+# Start Bluetooth thread
+bluetooth_thread = threading.Thread(target=handle_bluetooth, daemon=True)
+bluetooth_thread.start()
+
+
 
 # Start the object detection loop
-run_object_detection()
+while True:
+    run_object_detection()
