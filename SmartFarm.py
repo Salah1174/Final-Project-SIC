@@ -1,7 +1,7 @@
-import threading
-import bluetooth
 from picamera2 import Picamera2
 from ultralytics import YOLO
+import threading
+import bluetooth
 import face_recognition
 import numpy as np
 import cv2
@@ -10,8 +10,6 @@ import time
 import paho.mqtt.client as mqtt
 import queue
 import serial
-
-
 
 # Initialize MQTT
 broker_url = "b8c7ac0cf61549cdbf366299ec2d5807.s1.eu.hivemq.cloud"  
@@ -42,14 +40,14 @@ known_face_names = []
 known_person1_image = face_recognition.load_image_file("/home/rasp/Desktop/Salah.jpg")
 known_person1_encoding = face_recognition.face_encodings(known_person1_image)[0]
 
-known_person2_image = face_recognition.load_image_file("/home/rasp/Desktop/Seif.jpg")
-known_person2_encoding = face_recognition.face_encodings(known_person2_image)[0]
+# known_person2_image = face_recognition.load_image_file("/home/rasp/Desktop/Seif.jpg")
+# known_person2_encoding = face_recognition.face_encodings(known_person2_image)[0]
 
 known_face_encodings.append(known_person1_encoding)
 known_face_names.append("Salah")
 
-known_face_encodings.append(known_person2_encoding)
-known_face_names.append("Seif")
+# known_face_encodings.append(known_person2_encoding)
+# known_face_names.append("Seif")
 
 # Initialize Bluetooth for solar tracking data
 ser = serial.Serial('/dev/rfcomm0',9600,timeout = 1)
@@ -61,21 +59,13 @@ data_queue = queue.Queue()
 infection_count = 0
 
 def handle_bluetooth():
-    """
-    This thread continuously reads data from the Bluetooth module and places it in a queue.
-    """
-    # print("Waiting for Bluetooth connection...")
-    # client_socket, address = server_socket.accept()
-    # print(f"Accepted connection from {address}")
-    
-
-
     while True:
         
         try:
             if ser.in_waiting > 0 :
                 line = ser.readline().decode('utf-8').rstrip()
-
+                line = int(line)
+                
                 print(f"Received Bluetooth data: {line}")
                 # Put the received data in the queue
                 data_queue.put(line)
@@ -84,13 +74,11 @@ def handle_bluetooth():
             break
 
 def publish_mqtt_solar_data():
-    """
-    This function publishes solar data to the MQTT broker from the queue.
-    """
+
     while not data_queue.empty():
         # Get data from the queue
         data = data_queue.get()
-        client.publish(Topic_Solar, f"Solar Tracking Data: {data}", qos=1)
+        client.publish(Topic_Solar, f"{data}", qos=1)
 
 def run_face_detection():
     print("Running Face Detection...")
@@ -136,8 +124,8 @@ def run_face_detection():
                 break
 
             # Exit face detection when 'q' is pressed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+                # break
 
     except KeyboardInterrupt:
         print("Interrupt received. Closing...")
