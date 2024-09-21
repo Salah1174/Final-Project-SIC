@@ -30,8 +30,9 @@ Water management is handled by a **smart irrigation system** that ensures plants
  ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Smart%20Irrigation%20System.jpeg)
 
 ## Smart Water-Level Management System for Efficient Agriculture
-
 The Smart Water-Level Management System is an integral component of a comprehensive smart agriculture solution. Utilizing ultrasonic sensors, this innovative system accurately detects water levels within a tank, ensuring optimal irrigation management. When the tank reaches its maximum capacity, the system automatically halts water intake, preventing overflow and conserving resources. Conversely, it reinitiates water filling when levels drop, promoting efficient water usage. This project exemplifies the integration of technology and agriculture, aiming to enhance sustainability and productivity in farming practices.
+
+![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/water-level%20system.jpeg)
 
 
 ### 🌡️ Real-time Monitoring with Node-RED
@@ -49,8 +50,6 @@ The system’s brain is a **Raspberry Pi** that automates key functions, includi
   ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Rasperipi.png)
   
 ---
-
-![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/water-level%20system.jpeg)
 
 ## Project Highlights
 - 🛡️ **Secure**: Protects the farm with advanced facial recognition.
