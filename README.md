@@ -1,7 +1,7 @@
 # 🌾🚜 Smart Farm: Innovative Agriculture for a Sustainable Future 🌞🌱
 
 ## Overview
-The **Smart Farm** project is a cutting-edge solution aimed at transforming traditional farming practices using advanced technologies. This system integrates various smart components like facial recognition for security, disease detection in plants, solar panel tracking, smart irrigation, and real-time monitoring via Node-RED. 📊🧑‍🌾
+The **Smart Farm** project is a cutting-edge solution aimed at transforming traditional farming practices using advanced technologies. This system integrates various smart components like facial recognition for security, disease detection in plants, solar panel tracking, smart irrigation, and real-time monitoring via Node-RED 📊🧑‍🌾
 
 ---
 
