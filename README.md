@@ -10,7 +10,7 @@ The **Smart Farm** project is a cutting-edge solution aimed at transforming trad
 
 ### 🔒 Unauthorized Access Detection with Facial Recognition
 Security is a top priority. The Smart Farm employs **facial recognition** to detect unauthorized individuals attempting to enter the farm. If any unrecognized face is detected, the system sends alerts to prevent intrusions.
-
+![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/FaceDetection.png)
 
 ### 🌿 Disease Detection in Plants
 The system continuously monitors the health of crops to detect any signs of disease. When an infected plant is found:
