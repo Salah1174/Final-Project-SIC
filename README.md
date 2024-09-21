@@ -26,6 +26,11 @@ Water management is handled by a **smart irrigation system** that ensures plants
 - 🌍 Monitors soil moisture levels and weather data in real time.
 - 🚰 Automatically irrigates the crops based on the needs of each plant, saving water and resources.
 
+## Smart Water-Level Management System for Efficient Agriculture
+
+The Smart Water-Level Management System is an integral component of a comprehensive smart agriculture solution. Utilizing ultrasonic sensors, this innovative system accurately detects water levels within a tank, ensuring optimal irrigation management. When the tank reaches its maximum capacity, the system automatically halts water intake, preventing overflow and conserving resources. Conversely, it reinitiates water filling when levels drop, promoting efficient water usage. This project exemplifies the integration of technology and agriculture, aiming to enhance sustainability and productivity in farming practices.
+
+
 ### 🌡️ Real-time Monitoring with Node-RED
 **Node-RED** is utilized to monitor various sensor data like temperature, humidity, and soil moisture in real-time. This information is visually presented on a **dashboard** that can be accessed remotely:
 - 📉 Provides detailed graphs for sensor data.
