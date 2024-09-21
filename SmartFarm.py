@@ -10,6 +10,8 @@ import time
 import paho.mqtt.client as mqtt
 import queue
 import serial
+import requests
+
 
 # Initialize MQTT
 broker_url = "b8c7ac0cf61549cdbf366299ec2d5807.s1.eu.hivemq.cloud"  
@@ -58,13 +60,34 @@ data_queue = queue.Queue()
 # Counter for detected infections
 infection_count = 0
 
+
+# Telegram bot parameters
+TOKEN = "7290187905:AAHp7vnjffhKLlAW23e0Z7IoEQ37tEPf_SE"  # Replace with your bot token
+CHAT_IDS = ['955629733', '1204758459']  # List of chat IDs (can be group or individual chat IDs)
+message_count = 0  # Counter for the number of detections
+
+# Function to send message and image to Telegram groups or multiple people
+def send_telegram_message(count, message, image_path=None):
+    for chat_id in CHAT_IDS:
+        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+        r = requests.get(url)
+        print(f"Message to {chat_id}: ", r.json())
+
+        if image_path:
+            files = {'photo': open(image_path, 'rb')}
+            url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
+            r = requests.post(url, files=files)
+            print(f"Image to {chat_id}: ", r.json())
+
+
+
 def handle_bluetooth():
     while True:
         
         try:
             if ser.in_waiting > 0 :
                 line = ser.readline().decode('utf-8').rstrip()
-                line = int(line)
+                # line = int(line)
                 
                 print(f"Received Bluetooth data: {line}")
                 # Put the received data in the queue
@@ -107,9 +130,14 @@ def run_face_detection():
                     first_match_index = matches.index(True)
                     name = known_face_names[first_match_index]
                     face_detected = True  # Set flag to True when a face is detected
-
                     # Log face detection to MQTT
                     client.publish(Topic_Logs, f"Face detected: {name}", qos=1)
+                elif False in matches:
+                    Unknown_image_path = "Unknown.jpg"
+                    cv2.imwrite(Unknown_image_path, im_rgb[top:bottom, left:right])  # Corrected slice order
+                    # Send message and image to Telegram groups/people
+                    send_telegram_message(message_count, "Detected Unknown!", Unknown_image_path)
+                    face_detected = True
 
                 # Draw a rectangle around the face and label it
                 cv2.rectangle(im, (left, top), (right, bottom), (0, 0, 255), 2)
@@ -126,12 +154,12 @@ def run_face_detection():
             # Exit face detection when 'q' is pressed
             # if cv2.waitKey(1) & 0xFF == ord('q'):
                 # break
-
     except KeyboardInterrupt:
         print("Interrupt received. Closing...")
     finally:
         print("Face detection finished.")
         cv2.destroyAllWindows()
+
 
 def run_object_detection():
     
@@ -142,6 +170,7 @@ def run_object_detection():
     print("Starting Object Detection...")
     try:
         while True:
+            
             # Capture a frame from the camera
             frame = picam2.capture_array()
 
@@ -167,6 +196,13 @@ def run_object_detection():
                 if object_name == "infected":  # Assuming the class name for infection is "infected"
                     infection_count += 1
                     client.publish(Topic_Infection, f"Infection detected: {infection_count}", qos=1)
+                    infected_plant_image_path = f"infected_{message_count}.jpg"
+                    cv2.imwrite(infected_plant_image_path, frame[y:y2, x:x2])
+                    # Send message and image to Telegram groups/people
+                    send_telegram_message(message_count, f"Detected {object_name}!",infected_plant_image_path)
+
+
+
 
                 cv2.rectangle(frame, (x, y), (x2, y2), (0, 0, 255), 2)
                 cv2.putText(frame, f"{object_name} {confi:.2f}", (x, y - 5), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
