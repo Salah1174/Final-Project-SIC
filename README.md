@@ -50,6 +50,8 @@ The system’s brain is a **Raspberry Pi** that automates key functions, includi
   
 ---
 
+![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/water-level%20system.jpeg)
+
 ## Project Highlights
 - 🛡️ **Secure**: Protects the farm with advanced facial recognition.
 - 🌍 **Eco-Friendly**: Powered by solar energy.
