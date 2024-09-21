@@ -13,12 +13,20 @@ import serial
 import requests
 
 
+
 # Initialize MQTT
 broker_url = "b8c7ac0cf61549cdbf366299ec2d5807.s1.eu.hivemq.cloud"  
 broker_port = 8883 
 Topic_Logs = "Logs"
 Topic_Infection = "Infection"
-Topic_Solar = "Solar_Panel"
+Topic_Voltage = "Solar_Panel"
+Topic_Sound = "Sound_Sensor"
+Topic_Moisture = "Soil_Moisture"
+Topic_Gas = "Gas_Sensor"
+Topic_Temp_DHT = "Temp_Dht"
+Topic_Humd_DHT = "Humd_Dht"
+
+
 
 client = mqtt.Client()
 client.username_pw_set("hivemq.webclient.1726841653034", "VDBSnJl<6%&3f72Fov?d")
@@ -52,10 +60,19 @@ known_face_names.append("Salah")
 # known_face_names.append("Seif")
 
 # Initialize Bluetooth for solar tracking data
-ser = serial.Serial('/dev/rfcomm0',9600,timeout = 1)
-ser.flush()
+hc06 = serial.Serial('/dev/rfcomm0',9600,timeout = 1)
+hc06.flush()
+
+# Initialize Bluetooth for solar tracking data
+hc05 = serial.Serial('/dev/rfcomm1',9600,timeout = 1)
+hc05.flush()
+
+
 # Queue to store solar tracking data from Bluetooth
-data_queue = queue.Queue()
+voltage_queue = queue.Queue()
+
+# Queue to store solar tracking data from Bluetooth
+waterLevel_queue = queue.Queue()
 
 # Counter for detected infections
 infection_count = 0
@@ -83,25 +100,46 @@ def send_telegram_message(count, message, image_path=None):
 
 def handle_bluetooth():
     while True:
-        
         try:
-            if ser.in_waiting > 0 :
-                line = ser.readline().decode('utf-8').rstrip()
-                # line = int(line)
+            if hc05.in_waiting > 0:
+                voltage = hc05.readline().decode('utf-8').rstrip()
+                print(f"Received Bluetooth data: {voltage}")
                 
-                print(f"Received Bluetooth data: {line}")
-                # Put the received data in the queue
-                data_queue.put(line)
+                # Extract Voltage
+                if "Voltage" in voltage:
+                    voltage = voltage.split("Voltage: ")[1]  # Extract the voltage value
+                    voltage_value = voltage.split(",")[0]  # Get the numeric value before any commas
+                    
+                    # Print the extracted voltage value
+                    print(f"Extracted Voltage: {voltage_value}")
+                    
+                    # Optionally, put the voltage value in the queue
+                    voltage_queue.put(voltage_value)
+    
+            if hc06.in_waiting > 0:
+                waterLevel = hc06.readline().decode('utf-8').rstrip()
+                print(f"Received Bluetooth data: {waterLevel}")
+                waterLevel_queue.put(waterLevel)
+                    
         except bluetooth.BluetoothError as e:
             print(f"Bluetooth Error: {e}")
             break
 
-def publish_mqtt_solar_data():
 
-    while not data_queue.empty():
+def publish_mqtt_solar_data():
+    while not voltage_queue.empty():
         # Get data from the queue
-        data = data_queue.get()
-        client.publish(Topic_Solar, f"{data}", qos=1)
+        data = voltage_queue.get()
+        client.publish(Topic_Voltage, f"{data}", qos=1)
+
+
+def publish_mqtt_waterLevel_data():
+
+    while not waterLevel_queue.empty():
+        # Get data from the queue
+        data = waterLevel_queue.get()
+        client.publish(Topic_Humd_DHT, f"{data}", qos=1)
+
 
 def run_face_detection():
     print("Running Face Detection...")
@@ -212,6 +250,11 @@ def run_object_detection():
 
             # Publish solar data from Bluetooth
             publish_mqtt_solar_data()
+
+            # Publish Water Level from Bluetooth
+            publish_mqtt_waterLevel_data()
+
+            
 
             # Check if the IR sensor detects an object
             if GPIO.input(IR_PIN) == 0:  # Active low
