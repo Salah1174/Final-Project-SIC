@@ -17,6 +17,7 @@ The system continuously monitors the health of crops to detect any signs of dise
 - 🌱 It captures the **image** of the infected plant using the Raspberry Pi camera.
 - 🧑‍💻 Automatically sends the image to a **Telegram bot** for reporting.
 - 📊 The system counts each infected plant, keeping track of occurrences over time.
+  ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/IMG-20240714-WA0045.jpg)
 
 ### ☀️ Solar Panel Tracking System
 The farm is powered by a **solar panel tracking system** that optimizes energy efficiency. The solar panels automatically adjust their angle based on the sun’s position, ensuring maximum energy collection during the day. 
