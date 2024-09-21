@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Agriculture Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e3f2fd;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .header {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #0277bd;
+        }
+
+        .sensor-container, .chart-container, .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .sensor-item {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 180px;
+            margin: 10px;
+        }
+
+        .sensor-item h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #0288d1;
+        }
+
+        .value {
+            font-size: 30px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .controls label {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .controls input[type="range"] {
+            width: 250px;
+            margin-bottom: 10px;
+        }
+
+        .controls .threshold-label {
+            font-size: 18px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .controls button {
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .controls button:hover {
+            background-color: #0277bd;
+        }
+
+        .status-message {
+            margin-top: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #388e3c;
+        }
+
+        .irrigation-status {
+            color: #d32f2f;
+        }
+
+        canvas {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">Smart Agriculture Monitoring Dashboard</div>
+
+    <!-- Sensor Values -->
+    <div class="sensor-container">
+        <div class="sensor-item">
+            <h2>Temperature</h2>
+            <p class="value" id="temperature">22&#8451;</p>
+        </div>
+
+        <div class="sensor-item">
+            <h2>Humidity</h2>
+            <p class="value" id="humidity">10%</p>
+        </div>
+
+        <div class="sensor-item">
+            <h2>Soil Moisture</h2>
+            <p class="value" id="soilMoisture">45%</p>
+        </div>
+
+        <div class="sensor-item">
+            <h2>Gas Sensor</h2>
+            <p class="value" id="gasSensor">0 ppm</p>
+        </div>
+    </div>
+
+    <!-- Chart Container -->
+    <div class="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <!-- Threshold Sliders -->
+    <div class="controls">
+        <div>
+            <label class="threshold-label">Set Moisture Threshold:</label>
+            <input type="range" id="moistureThreshold" min="0" max="100" value="40">
+            <span id="moistureThresholdValue">40%</span>
+        </div>
+
+        <div>
+            <label class="threshold-label">Set Temperature Threshold:</label>
+            <input type="range" id="tempThreshold" min="0" max="50" value="30">
+            <span id="tempThresholdValue">30&#8451;</span>
+        </div>
+
+        <div>
+            <label class="threshold-label">Set Humidity Threshold:</label>
+            <input type="range" id="humidityThreshold" min="0" max="100" value="60">
+            <span id="humidityThresholdValue">60%</span>
+        </div>
+
+        <div>
+            <label class="threshold-label">Set Gas Threshold:</label>
+            <input type="range" id="gasThreshold" min="0" max="200" value="100">
+            <span id="gasThresholdValue">100 ppm</span>
+        </div>
+
+        <button onclick="startIrrigation()">Start Irrigation</button>
+        <button onclick="stopIrrigation()">Stop Irrigation</button>
+    </div>
+
+    <div class="status-message">
+        <span>Irrigation System Status: </span><span class="irrigation-status" id="irrigationStatus">OFF</span>
+    </div>
+
+    <script>
+        // Default values
+        let soilMoisture = 45;
+        let temperature = 22;
+        let humidity = 10;
+        let gasLevel = 0;
+
+        let moistureThreshold = 40;
+        let tempThreshold = 30;
+        let humidityThreshold = 60;
+        let gasThreshold = 100;
+        let irrigationOn = false;
+
+        document.getElementById('moistureThreshold').addEventListener('input', function() {
+            moistureThreshold = this.value;
+            document.getElementById('moistureThresholdValue').innerText = this.value + '%';
+        });
+
+        document.getElementById('tempThreshold').addEventListener('input', function() {
+            tempThreshold = this.value;
+            document.getElementById('tempThresholdValue').innerText = this.value + "°C";
+        });
+
+        document.getElementById('humidityThreshold').addEventListener('input', function() {
+            humidityThreshold = this.value;
+            document.getElementById('humidityThresholdValue').innerText = this.value + '%';
+        });
+
+        document.getElementById('gasThreshold').addEventListener('input', function() {
+            gasThreshold = this.value;
+            document.getElementById('gasThresholdValue').innerText = this.value + ' ppm';
+        });
+
+        // Firebase Configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyA82HD90czI_Oix3D2uWgT4nbrNwG3kWw4",
+            authDomain: "agriculture-system-ca27a.firebaseapp.com",
+            databaseURL: "https://agriculture-system-ca27a-default-rtdb.firebaseio.com",
+            projectId: "agriculture-system-ca27a",
+            storageBucket: "agriculture-system-ca27a.appspot.com",
+            messagingSenderId: "360914892070",
+            appId: "1:360914892070:web:78f1b2f97288b72378bde7",
+            measurementId: "G-JQXRJYSBBN"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+
+        // Charts Data
+        let labels = [];
+        let tempData = [];
+        let humidityData = [];
+        let moistureData = [];
+        let gasData = [];
+
+        // Setup the chart
+        var ctx = document.getElementById('chart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        borderColor: '#FF5733',
+                        data: tempData,
+                        fill: false
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        borderColor: '#33B5FF',
+                        data: humidityData,
+                        fill: false
+                    },
+                    {
+                        label: 'Soil Moisture (%)',
+                        borderColor: '#33FF57',
+                        data: moistureData,
+                        fill: false
+                    },
+                    {
+                        label: 'Gas Sensor (ppm)',
+                        borderColor: '#FFC300',
+                        data: gasData,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        }
+                    }
+                }
+            }
+        });
+
+        setInterval(function() {
+            var currentTime = new Date().toLocaleTimeString();
+
+            // Fetch Temperature
+            var tempRef = database.ref('Temperature');
+            tempRef.on('value', function(snapshot) {
+                var temp = snapshot.val();
+                document.getElementById('temperature').innerHTML = temp + "°C";
+                tempData.push(temp);
+                labels.push(currentTime);
+                chart.update();
+            });
+            var humiRef = database.ref('Humidity');
+            humiRef.on('value', function(snapshot) {
+                var humi = snapshot.val();
+                document.getElementById('humidity').innerHTML = humi + "%";
+                humidityData.push(humi);
+                chart.update();
+            });
+            var soilMoistureRef = database.ref('SoilMoisture');
+            soilMoistureRef.on('value', function(snapshot) {
+                soilMoisture = snapshot.val();
+                document.getElementById('soilMoisture').innerHTML = soilMoisture + "%";
+                moistureData.push(soilMoisture);
+                chart.update();
+            });
+
+            var gasSensorRef = database.ref('GasSensor/Level');
+            gasSensorRef.on('value', function(snapshot) {
+                gasLevel = snapshot.val();
+                document.getElementById('gasSensor').innerHTML = gasLevel + " ppm";
+                gasData.push(gasLevel);
+                chart.update();
+            });
+        }, 5000);
+
+        function startIrrigation() {
+            if (!irrigationOn) {
+                document.getElementById('irrigationStatus').innerText = "ON";
+                irrigationOn = true;
+                // Logic to start irrigation can be added here
+            }
+        }
+
+        function stopIrrigation() {
+            if (irrigationOn) {
+                document.getElementById('irrigationStatus').innerText = "OFF";
+                irrigationOn = false;
+                // Logic to stop irrigation can be added here
+            }
+        }
+    </script>
+</body>
+
+</html>
