@@ -41,7 +41,10 @@ The Smart Water-Level Management System is an integral component of a comprehens
 - ⚠️ Sends alerts for abnormal conditions.
   ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Smart%20Farm%20(1).png)
 
-  ### 🌡️ Real-time Monitoring with Telegram-bot
+  # 🌡️ Real-time Monitoring with Telegram-bot
+  - capture images of th infected plant and sent it to a telegram bot ,
+  - sent the count of the infected plant ,
+   - send some alert of the sound sensor and tank level
   ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Screenshot_%D9%A2%D9%A0%D9%A2%D9%A4%D9%A0%D9%A9%D9%A2%D9%A0-%D9%A2%D9%A3%D9%A2%D9%A7%D9%A5%D9%A7_Telegram.jpg)
 
 ### 🤖 Automation via Raspberry Pi
