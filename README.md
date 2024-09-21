@@ -1,5 +1,5 @@
 # 🌾🚜 Smart Farm: Innovative Agriculture for a Sustainable Future 🌞🌱
-![Alt text](https://github.com/AmiraSayedMohamed/Car-Game-using-python/blob/master/game.jpg)
+![Alt text]([https://github.com/AmiraSayedMohamed/Car-Game-using-python/blob/master/game.jpg](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Smart%20Farm.png))
 
 ## Overview
 The **Smart Farm** project is a cutting-edge solution aimed at transforming traditional farming practices using advanced technologies. This system integrates various smart components like facial recognition for security, disease detection in plants, solar panel tracking, smart irrigation, and real-time monitoring via Node-RED 📊🧑‍🌾
