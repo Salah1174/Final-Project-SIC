@@ -42,7 +42,7 @@ The Smart Water-Level Management System is an integral component of a comprehens
   ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Smart%20Farm%20(1).png)
 
   ### 🌡️ Real-time Monitoring with Telegram-bot
-  
+  ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Screenshot_%D9%A2%D9%A0%D9%A2%D9%A4%D9%A0%D9%A9%D9%A2%D9%A0-%D9%A2%D9%A3%D9%A2%D9%A7%D9%A5%D9%A7_Telegram.jpg)
 
 ### 🤖 Automation via Raspberry Pi
 The system’s brain is a **Raspberry Pi** that automates key functions, including:
