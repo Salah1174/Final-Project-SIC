@@ -44,6 +44,7 @@ The system’s brain is a **Raspberry Pi** that automates key functions, includi
 - Managing irrigation.
 - Monitoring plant health.
 - Reporting infections via Telegram.
+  ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Rasperipi.png)
   
 ---
 
