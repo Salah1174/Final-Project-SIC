@@ -36,6 +36,7 @@ The Smart Water-Level Management System is an integral component of a comprehens
 **Node-RED** is utilized to monitor various sensor data like temperature, humidity, and soil moisture in real-time. This information is visually presented on a **dashboard** that can be accessed remotely:
 - 📉 Provides detailed graphs for sensor data.
 - ⚠️ Sends alerts for abnormal conditions.
+  ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Smart%20Farm%20(1).png)
 
 ### 🤖 Automation via Raspberry Pi
 The system’s brain is a **Raspberry Pi** that automates key functions, including:
