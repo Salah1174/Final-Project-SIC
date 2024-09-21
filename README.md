@@ -21,6 +21,7 @@ The system continuously monitors the health of crops to detect any signs of dise
 
 ### ☀️ Solar Panel Tracking System
 The farm is powered by a **solar panel tracking system** that optimizes energy efficiency. The solar panels automatically adjust their angle based on the sun’s position, ensuring maximum energy collection during the day. 
+![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Solar%20Panel%20Tracking.jpeg)
 
 ### 💧 Smart Irrigation System
 Water management is handled by a **smart irrigation system** that ensures plants receive the right amount of water:
