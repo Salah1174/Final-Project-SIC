@@ -27,6 +27,7 @@ The farm is powered by a **solar panel tracking system** that optimizes energy e
 Water management is handled by a **smart irrigation system** that ensures plants receive the right amount of water:
 - 🌍 Monitors soil moisture levels and weather data in real time.
 - 🚰 Automatically irrigates the crops based on the needs of each plant, saving water and resources.
+ ![Alt text](https://github.com/Salah1174/Final-Project-SIC/blob/main/Pictures/Smart%20Irrigation%20System.jpeg)
 
 ## Smart Water-Level Management System for Efficient Agriculture
 
