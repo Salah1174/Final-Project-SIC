@@ -11,6 +11,7 @@ import paho.mqtt.client as mqtt
 import queue
 import serial
 import requests
+import re
 
 
 
@@ -69,10 +70,10 @@ hc05.flush()
 
 
 # Queue to store solar tracking data from Bluetooth
-voltage_queue = queue.Queue()
+voltage_ = 0
 
 # Queue to store solar tracking data from Bluetooth
-waterLevel_queue = queue.Queue()
+waterLevel_ = 0
 
 # Counter for detected infections
 infection_count = 0
@@ -88,57 +89,59 @@ def send_telegram_message(count, message, image_path=None):
     for chat_id in CHAT_IDS:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
         r = requests.get(url)
-        print(f"Message to {chat_id}: ", r.json())
+        # print(f"Message to {chat_id}: ", r.json())
 
         if image_path:
             files = {'photo': open(image_path, 'rb')}
             url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
             r = requests.post(url, files=files)
-            print(f"Image to {chat_id}: ", r.json())
+            # print(f"Image to {chat_id}: ", r.json())
 
 
 
-def handle_bluetooth():
-    while True:
-        try:
-            if hc05.in_waiting > 0:
-                voltage = hc05.readline().decode('utf-8').rstrip()
-                print(f"Received Bluetooth data: {voltage}")
+# def handle_bluetooth():
+#     while True:
+#         try:
+#             if hc05.in_waiting > 0:
+#                 data = hc05.readline().decode('utf-8').rstrip()
+#                 # print(f"Received Bluetooth data: {data}")
                 
-                # Extract Voltage
-                if "Voltage" in voltage:
-                    voltage = voltage.split("Voltage: ")[1]  # Extract the voltage value
-                    voltage_value = voltage.split(",")[0]  # Get the numeric value before any commas
+#                 # Extract Deep value
+#                 if "Deep" in data:
+#                     deep_value = data.split("Deep : ")[1].split(",")[0]  # Extract the Deep value
+#                     # print(f"Extracted Deep: {deep_value}")
+#                     # client.publish(Topic_Humd_DHT, f"{deep_value}", qos=1)
+#                     # Optionally, put the deep value in the queue
+#                     waterLevel_queue.put(deep_value)
+                
+#                 # Extract Voltage value
+#                 if "Voltage" in data:
+#                     voltage_value = data.split("Voltage: ")[1].split(",")[0]  # Extract the Voltage value
+#                     # print(f"Extracted Voltage: {voltage_value}")
+#                     # client.publish(Topic_Voltage, f"{voltage_value}", qos=1)
+
+#                     # Optionally, put the voltage value in the queue
+#                     voltage_queue.put(voltage_value)
                     
-                    # Print the extracted voltage value
-                    print(f"Extracted Voltage: {voltage_value}")
-                    
-                    # Optionally, put the voltage value in the queue
-                    voltage_queue.put(voltage_value)
-    
-            if hc06.in_waiting > 0:
-                waterLevel = hc06.readline().decode('utf-8').rstrip()
-                print(f"Received Bluetooth data: {waterLevel}")
-                waterLevel_queue.put(waterLevel)
-                    
-        except bluetooth.BluetoothError as e:
-            print(f"Bluetooth Error: {e}")
-            break
+#         except bluetooth.BluetoothError as e:
+#             print(f"Bluetooth Error: {e}")
+#             break
 
 
-def publish_mqtt_solar_data():
-    while not voltage_queue.empty():
-        # Get data from the queue
-        data = voltage_queue.get()
-        client.publish(Topic_Voltage, f"{data}", qos=1)
+
+# def publish_mqtt_solar_data():
+#     while not voltage_queue.empty():
+#         # Get data from the queue
+#         data = voltage_queue.get()
+#         client.publish(Topic_Voltage, f"{data}", qos=1)
 
 
-def publish_mqtt_waterLevel_data():
+# def publish_mqtt_waterLevel_data():
 
-    while not waterLevel_queue.empty():
-        # Get data from the queue
-        data = waterLevel_queue.get()
-        client.publish(Topic_Humd_DHT, f"{data}", qos=1)
+#     while not waterLevel_queue.empty():
+#         # Get data from the queue
+#         data = waterLevel_queue.get()
+#         client.publish(Topic_Humd_DHT, f"{data}", qos=1)
 
 
 def run_face_detection():
@@ -234,26 +237,75 @@ def run_object_detection():
                 if object_name == "infected":  # Assuming the class name for infection is "infected"
                     infection_count += 1
                     client.publish(Topic_Infection, f"Infection detected: {infection_count}", qos=1)
-                    infected_plant_image_path = f"infected_{message_count}.jpg"
-                    cv2.imwrite(infected_plant_image_path, frame[y:y2, x:x2])
+                    # infected_plant_image_path = f"infected_{message_count}.jpg"
+                    # cv2.imwrite(infected_plant_image_path, frame[y:y2, x:x2])
                     # Send message and image to Telegram groups/people
-                    send_telegram_message(message_count, f"Detected {object_name}!",infected_plant_image_path)
-
-
+                    # send_telegram_message(message_count, f"Detected {object_name}!",infected_plant_image_path)
 
 
                 cv2.rectangle(frame, (x, y), (x2, y2), (0, 0, 255), 2)
                 cv2.putText(frame, f"{object_name} {confi:.2f}", (x, y - 5), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
 
+
+            try:
+                if hc05.in_waiting > 0:
+                    data = hc05.readline().decode('utf-8').rstrip()
+                    # print(f"Received Bluetooth data: {data}")
+
+                    # Extract Deep value
+                    if "Deep" in data:
+                        deep_value = data.split("Deep : ")[1].split(",")[0]  # Extract the Deep value
+                        # print(f"Extracted Deep: {deep_value}")
+                        # client.publish(Topic_Humd_DHT, f"{deep_value}", qos=1)
+                        # Optionally, put the deep value in the queue
+                        waterLevel_ = deep_value
+                        # client.publish(Topic_Humd_DHT, f"{waterLevel_}", qos=1)
+
+                    # Extract Voltage value
+                    if "Voltage" in data:
+                        voltage_value = data.split("Voltage: ")[1].split(",")[0]  # Extract the Voltage value
+                        # print(f"Extracted Voltage: {voltage_value}")
+                        # client.publish(Topic_Voltage, f"{voltage_value}", qos=1)
+
+                        # Optionally, put the voltage value in the queue
+                        # voltage_queue.put(voltage_value)
+                        voltage_ = voltage_value
+                        client.publish(Topic_Voltage, f"{voltage_}", qos=1)
+  
+                if hc06.in_waiting > 0:
+                    data1 = hc06.readline().decode('utf-8').rstrip()
+
+                    # Use regular expressions to find the values in the data
+                    pattern = r"Moisture:\s([\d.]+)%\s\|\sLight Intensity:\s(\d+)\s\|\sTemperature:\s([\d.]+)°C\s\|\sHumidity:\s([\d.]+)%\s\|\sGas Level:\s(\d+)"
+                    match = re.search(pattern, data1)
+
+                    if match:
+                        moisture = match.group(1)  # Extracted moisture value
+                        light_intensity = match.group(2)  # Extracted light intensity value
+                        temperature = match.group(3)  # Extracted temperature value
+                        humidity = match.group(4)  # Extracted humidity value
+                        gas_level = match.group(5)  # Extracted gas level value
+
+                        client.publish(Topic_Humd_DHT, f"{humidity}", qos=1)
+                        client.publish(Topic_Temp_DHT, f"{temperature}", qos=1)
+                        client.publish(Topic_Gas, f"{gas_level}", qos=1)
+                        client.publish(Topic_Moisture, f"{moisture}", qos=1)
+                        
+            except bluetooth.BluetoothError as e:
+                print(f"Bluetooth Error: {e}")
+                break
+
             # Show the processed frame
             cv2.imshow("Object Detection", frame)
 
+
+
             # Publish solar data from Bluetooth
-            publish_mqtt_solar_data()
+            # publish_mqtt_solar_data()
 
             # Publish Water Level from Bluetooth
-            publish_mqtt_waterLevel_data()
-
+            # publish_mqtt_waterLevel_data()
+            
             
 
             # Check if the IR sensor detects an object
@@ -275,9 +327,9 @@ def run_object_detection():
         GPIO.cleanup()  # Clean up GPIO
         cv2.destroyAllWindows()
 
-# Start Bluetooth thread
-bluetooth_thread = threading.Thread(target=handle_bluetooth, daemon=True)
-bluetooth_thread.start()
+# # Start Bluetooth thread
+# bluetooth_thread = threading.Thread(target=handle_bluetooth, daemon=True)
+# bluetooth_thread.start()
 
 
 
