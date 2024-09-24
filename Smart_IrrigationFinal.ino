@@ -5,12 +5,14 @@
 // #include <BlynkSimpleEsp32.h>
 #include <DHT.h>
 #define TH A2 //Pin for dht11
-#define MotorPin 5 //for cooling/heating unit
+int in1 = 9; //Declaring the pins where in1 in2 from the driver are wired 
+int in2 = 10;
+#define buzzer 8
+
 
 #define sensor A3  // for gas detection
 #define LDRPIN A1   //for LDR
 #define soilMoisturePin A0
-
 
 #define LED_1 2 // Pin connected to LED 1
 #define LED_PIN_2 3 // Pin connected to LED 2
@@ -46,7 +48,9 @@ void setup() {
   pinMode(LED_PIN_3, OUTPUT);
   pinMode(LED_PIN_4, OUTPUT);
   digitalWrite(6, HIGH); // relay
-  digitalWrite(MotorPin, LOW);
+  pinMode(in1, OUTPUT); //Declaring the pin modes of motor
+  pinMode(in2, OUTPUT);
+  pinMode(buzzer, OUTPUT);
   delay(1000);
   lcd.setCursor(0, 0);
   lcd.print("Hello");
@@ -65,14 +69,15 @@ void loop() {
     counter = 0 ;
     delay(5000);
   }
+  counter++;
   int sensorValue = analogRead(soilMoisturePin);
   
   
   // Convert the value to a percentage (assuming 0-4095 range for ESP32 ADC)
   float moisturePercentage = 100 - ((sensorValue / 1023.0) * 100.0);
   int ldr_value = analogRead(LDRPIN);
-  Serial.print("Light Intensity Value : ");
-  Serial.println(ldr_value);
+  //Serial.print("Light Intensity Value : ");
+  //Serial.println(ldr_value);
   
   //   // LDR conditions
   if (ldr_value < 200) { //very light
@@ -122,56 +127,57 @@ void loop() {
   //Blynk.virtualWrite(V1, t)
 
   // Print the moisture percentage to the serial monitor
-  Serial.print("Soil Moisture: ");
-  Serial.println(moisturePercentage );
+  //Serial.print("Soil Moisture: ");
+  //Serial.println(moisturePercentage );
   // Serial.println("%");
-  digitalWrite(LED_1, HIGH);
-  digitalWrite(LED_PIN_2, HIGH);
-  digitalWrite(LED_PIN_3, HIGH);
-  digitalWrite(LED_PIN_4, HIGH);
+  // digitalWrite(LED_1, HIGH);
+  // digitalWrite(LED_PIN_2, HIGH);
+  // digitalWrite(LED_PIN_3, HIGH);
+  // digitalWrite(LED_PIN_4, HIGH);
 
   float h = dht.readHumidity();
   float t = dht.readTemperature();
 
     // Temperature conditions
-  if (t > 40) {
-    // opening the door
-    digitalWrite(MotorPin, HIGH);
-    // Serial.println("Turning on cooling unit");
-    // Serial.println("Opening the Door");
-  } else if (t <= 25 and t <=37) {
-    // Turn on heating unit until temperature reaches 37
-    // Serial.println("Turning on heating unit");
-    // Serial.println("Opening the Door");
-    digitalWrite(MotorPin, HIGH);
-    // delay(3000); // Delay 1 second
-    
-    digitalWrite(MotorPin, LOW); // Turn off heating unit
-  } else {
+  if (t > 32) {
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, LOW);
+}
+  
+  else {
     // Normal temperature
     // Serial.println("Normal Temprature");
-    digitalWrite(MotorPin, LOW);
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, LOW);
   }
 
   int rawValue = analogRead(sensor); // Get the raw value
-  Serial.print("Gas Level: ");
-  Serial.println(rawValue); // Print the raw value directly without mapping
+  //Serial.print("Gas Level: ");
+  //Serial.println(rawValue); // Print the raw value directly without mapping
+  if (rawValue > 205 ){
+    digitalWrite(buzzer, HIGH);
+  } 
+  else{
+    digitalWrite(buzzer, LOW);
+  }  
+
 
  
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
-  
-  // Blynk.virtualWrite(V2, t);
-  // Blynk.virtualWrite(V3, h);
-  Serial.print("Temp: ");
-  Serial.print(t);
-  Serial.println("%");
 
-  Serial.print("Humidity: ");
+  Serial.print("Moisture: ");
+  Serial.print(moisturePercentage);
+  Serial.print("% | Light Intensity: ");
+  Serial.print(ldr_value);
+  Serial.print(" | Temperature: ");
+  Serial.print(t);
+  Serial.print("°C | Humidity: ");
   Serial.print(h);
-  Serial.println("%");
+  Serial.print("% | Gas Level: ");
+  Serial.println(rawValue); 
 
 
   if (moisturePercentage  < 50) { // need water
@@ -198,7 +204,7 @@ void loop() {
 
  // Blynk.run();
   // Wait for a second before taking another reading
-  Serial.println(counter);
-  counter++;
+  //Serial.println(counter);
+ // counter++;
 delay(4000);
 }
