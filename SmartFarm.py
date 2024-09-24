@@ -1,6 +1,5 @@
 from picamera2 import Picamera2
 from ultralytics import YOLO
-import threading
 import bluetooth
 import face_recognition
 import numpy as np
@@ -8,12 +7,11 @@ import cv2
 import RPi.GPIO as GPIO
 import time
 import paho.mqtt.client as mqtt
-import queue
 import serial
 import requests
 import re
-
-
+# import queue
+# import threading
 
 # Initialize MQTT
 broker_url = "b8c7ac0cf61549cdbf366299ec2d5807.s1.eu.hivemq.cloud"  
@@ -26,13 +24,13 @@ Topic_Moisture = "Soil_Moisture"
 Topic_Gas = "Gas_Sensor"
 Topic_Temp_DHT = "Temp_Dht"
 Topic_Humd_DHT = "Humd_Dht"
-
-
+Topic_WaterLevel = "Ultrasonic"
 
 client = mqtt.Client()
 client.username_pw_set("hivemq.webclient.1726841653034", "VDBSnJl<6%&3f72Fov?d")
 client.tls_set()
 client.connect(broker_url, broker_port)
+# client.loop_forever()
 
 # Initialize GPIO for IR sensor
 GPIO.setmode(GPIO.BCM)
@@ -51,33 +49,32 @@ known_face_names = []
 known_person1_image = face_recognition.load_image_file("/home/rasp/Desktop/Salah.jpg")
 known_person1_encoding = face_recognition.face_encodings(known_person1_image)[0]
 
-# known_person2_image = face_recognition.load_image_file("/home/rasp/Desktop/Seif.jpg")
-# known_person2_encoding = face_recognition.face_encodings(known_person2_image)[0]
-
 known_face_encodings.append(known_person1_encoding)
 known_face_names.append("Salah")
 
-# known_face_encodings.append(known_person2_encoding)
-# known_face_names.append("Seif")
+known_person1_image = face_recognition.load_image_file("/home/rasp/Desktop/Salah2.jpg")
+known_person1_encoding = face_recognition.face_encodings(known_person1_image)[0]
+
+known_face_encodings.append(known_person1_encoding)
+known_face_names.append("Salah")
 
 # Initialize Bluetooth for solar tracking data
 hc06 = serial.Serial('/dev/rfcomm0',9600,timeout = 1)
 hc06.flush()
 
 # Initialize Bluetooth for solar tracking data
-hc05 = serial.Serial('/dev/rfcomm1',9600,timeout = 1)
+hc05 = serial.Serial('/dev/rfcomm0',9600,timeout = 1)
 hc05.flush()
 
 
 # Queue to store solar tracking data from Bluetooth
-voltage_ = 0
+# voltage_queue = queue.Queue()
 
 # Queue to store solar tracking data from Bluetooth
-waterLevel_ = 0
+# waterLevel_ = queue.Queue()
 
 # Counter for detected infections
 infection_count = 0
-
 
 # Telegram bot parameters
 TOKEN = "7290187905:AAHp7vnjffhKLlAW23e0Z7IoEQ37tEPf_SE"  # Replace with your bot token
@@ -96,8 +93,6 @@ def send_telegram_message(count, message, image_path=None):
             url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
             r = requests.post(url, files=files)
             # print(f"Image to {chat_id}: ", r.json())
-
-
 
 # def handle_bluetooth():
 #     while True:
@@ -143,7 +138,6 @@ def send_telegram_message(count, message, image_path=None):
 #         data = waterLevel_queue.get()
 #         client.publish(Topic_Humd_DHT, f"{data}", qos=1)
 
-
 def run_face_detection():
     print("Running Face Detection...")
     try:
@@ -161,7 +155,7 @@ def run_face_detection():
             face_locations = face_recognition.face_locations(im_rgb)
             face_encodings = face_recognition.face_encodings(im_rgb, face_locations)
 
-            face_detected = False  # Flag to stop face detection once a face is recognized
+            face_detected = False  
 
             for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
                 matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
@@ -191,16 +185,12 @@ def run_face_detection():
             if face_detected:
                 print(f"Face detected: {name}. Exiting face detection...")
                 break
-
-            # Exit face detection when 'q' is pressed
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-                # break
+    
     except KeyboardInterrupt:
         print("Interrupt received. Closing...")
     finally:
         print("Face detection finished.")
         cv2.destroyAllWindows()
-
 
 def run_object_detection():
     
@@ -233,42 +223,28 @@ def run_object_detection():
                 class_id = int(cls)
                 object_name = yolo_model.names[class_id]
 
-                # Increment infection count if the object is detected as an "infection"
-                if object_name == "infected":  # Assuming the class name for infection is "infected"
+                if object_name == "infected": 
                     infection_count += 1
                     client.publish(Topic_Infection, f"Infection detected: {infection_count}", qos=1)
-                    # infected_plant_image_path = f"infected_{message_count}.jpg"
-                    # cv2.imwrite(infected_plant_image_path, frame[y:y2, x:x2])
+                    infected_plant_image_path = f"infected_{message_count}.jpg"
+                    cv2.imwrite(infected_plant_image_path, frame[y:y2, x:x2])
                     # Send message and image to Telegram groups/people
-                    # send_telegram_message(message_count, f"Detected {object_name}!",infected_plant_image_path)
-
+                    send_telegram_message(message_count, f"Detected {object_name}!",infected_plant_image_path)
 
                 cv2.rectangle(frame, (x, y), (x2, y2), (0, 0, 255), 2)
                 cv2.putText(frame, f"{object_name} {confi:.2f}", (x, y - 5), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
 
-
             try:
                 if hc05.in_waiting > 0:
                     data = hc05.readline().decode('utf-8').rstrip()
-                    # print(f"Received Bluetooth data: {data}")
 
-                    # Extract Deep value
                     if "Deep" in data:
-                        deep_value = data.split("Deep : ")[1].split(",")[0]  # Extract the Deep value
-                        # print(f"Extracted Deep: {deep_value}")
-                        # client.publish(Topic_Humd_DHT, f"{deep_value}", qos=1)
-                        # Optionally, put the deep value in the queue
-                        waterLevel_ = deep_value
-                        # client.publish(Topic_Humd_DHT, f"{waterLevel_}", qos=1)
-
+                        deep_value = data.split("Deep : ")[1].split(",")[0]  
+                        client.publish(Topic_WaterLevel, f"{deep_value}", qos=1)
+ 
                     # Extract Voltage value
                     if "Voltage" in data:
-                        voltage_value = data.split("Voltage: ")[1].split(",")[0]  # Extract the Voltage value
-                        # print(f"Extracted Voltage: {voltage_value}")
-                        # client.publish(Topic_Voltage, f"{voltage_value}", qos=1)
-
-                        # Optionally, put the voltage value in the queue
-                        # voltage_queue.put(voltage_value)
+                        voltage_value = data.split("Voltage: ")[1].split(",")[0] 
                         voltage_ = voltage_value
                         client.publish(Topic_Voltage, f"{voltage_}", qos=1)
   
@@ -298,15 +274,13 @@ def run_object_detection():
             # Show the processed frame
             cv2.imshow("Object Detection", frame)
 
-
-
             # Publish solar data from Bluetooth
             # publish_mqtt_solar_data()
 
             # Publish Water Level from Bluetooth
             # publish_mqtt_waterLevel_data()
             
-            
+            client.loop(.1)
 
             # Check if the IR sensor detects an object
             if GPIO.input(IR_PIN) == 0:  # Active low
@@ -330,8 +304,6 @@ def run_object_detection():
 # # Start Bluetooth thread
 # bluetooth_thread = threading.Thread(target=handle_bluetooth, daemon=True)
 # bluetooth_thread.start()
-
-
 
 # Start the object detection loop
 while True:

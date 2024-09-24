@@ -57,7 +57,7 @@ try :
         print(f"Message '{message2}' published to topic '{topic2}' on broker '{broker_url}'")
         
         
-#        client.loop_forever()
+       client.loop_forever()
 #        print("Sleep")
         time.sleep(10)
 
